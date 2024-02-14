@@ -1,0 +1,333 @@
+---
+title: "R Notebook- PRACTICA 6"
+output: html_notebook
+---
+
+Ejercicio 1: datos del titanic y rpart
+
+Se le proporciona un fichero de nombre "train.csv" que contiene 4 columnas con valores numéricos y categóricos. Las variables son:
+
+\- Sobrevivió, 0 ó 1, donde 0 es no sobrevive.
+
+\- Clase: los pasajeros tienen billete de 1º, 2º o 3º.
+
+\- Sexo: variable categórica con el género.
+
+\- Y finalmente edad.
+
+Estos datos representan las variables de 500 pasajeros del crucero Titanic. El objetivo es crear un modelo de predicción de la supervivencia de los pasajeros. Para ello realice los siguientes pasos:
+
+1\. Cargue los datos en una variable de nombre train que será un dataframe con 4 variables o atributos y 500 observaciones (pasajeros) que vienen codificados en el fichero. Para ello:
+
+train\<-read.delim("train.csv", sep = "\\t", head = TRUE)
+
+rownames(train) \<- train\$id
+
+train\$id \<- NULL
+
+Inspeccione el conjunto de entrenamiento (funciones head, str, dim).
+
+```{r}
+
+
+# PONER UNA NUEVA CELDA CTROL+ALT+I
+
+
+train<-read.delim("practica6_datos/train.csv", sep = "\t", head = TRUE)
+
+#aqui poingo la colimna id como filas
+rownames(train) <- train$id
+#puede ser que quite la columna id
+train$id <- NULL
+
+
+#fijo la semilla antes de empezar--> se me generan siempre los mismos numero aletorios en esta sesion (para los algoritmos)
+set.seed(1)
+
+#VER TABLA
+head(train)
+
+str(train)
+
+dim(train) # 500 filas 4 variables
+
+```
+
+Cargue los siguientes paquetes para crear árboles de decisión.
+
+3\. La función para crear árboles de decisión que vamos a utilizar es rpart. Teclee en la consola help("rpart") y estudie como aplicarla. Utilice los parámetros:
+
+o Formula, indicando que el objetivo a predecir es la supervivencia en función del resto de atributros.
+
+o Indique el conjunto de entrenamiento.
+
+o El parámetro method indique que va a realizar clasificación sobre variables categóricas o factor en R.
+
+o Visualice el resultado usando la función plot.
+
+```{r}
+
+#install.packages("rattle")
+library(rpart)
+library(rattle)
+library(RColorBrewer)
+
+```
+
+```{r}
+
+#HAY QUE PONERLO DIRECTAMENTE EN LA CONSOLA 
+#help("rpart")
+```
+
+```{r}
+
+#formula -> significa que predecimos la variable supervivencia a partir del resto 
+
+arbol_1 <- rpart(formula = Survived ~ . , data = train)
+
+# si quisiera predecir en funcion de dos col pondria el nombre de las 2 en vez de 
+# del .
+
+```
+
+```{r}
+arbol_1
+```
+
+```{r}
+# parametro method -> NS MUY BIEN Q HACE
+
+arbol_2 <- rpart(formula = Survived ~ ., data = train, method= "class")
+```
+
+```{r}
+#rpart.plot(arbol_1) # no me funciona
+fancyRpartPlot(arbol_1)
+fancyRpartPlot(arbol_2)
+```
+
+Analizamos el resultado. Indique cuál de las siguientes afirmaciones es correcta, (recuerda, 0 no sobrevive 1 vive) :
+
+INTERPRETACION: NODO 1: CAEN EL 100% DE LOS INDIVIDUOS // 59% MUEREN y 41% VIVEN
+
+NODO 2: CAEN EL 64% DE TODOS LOS INDIVIDUOS // 78% MUERE y 22% VIVEN --\> si se podara predeciria que MUEREN --\>0
+
+NODO 5: CAEN EL 2% DE TODOS LOS IND // 18% mueren y 82% viven --\> predice que viven
+
+ El árbol predecirá que las pasajeras de la clase 3 no sobrevivirán, aunque está cerca.
+
+VERDADERO -\> 56% de probabilidades a que mueran
+
+ La clase mayoritaria del nodo raíz es positiva, lo que denota supervivencia.
+
+FALSO --\> 59% de los individuos que caen al nodo raiz MUEREN
+
+ El atributo que sigue al género es hombre es una variable categórica.
+
+FALSO\--\> es numerica (pero esta discretizada)
+
+```{r}
+
+```
+
+4)Cargue el conjunto de datos de test del fichero con nombre "test.csv" de igual modo en el que se realizó la carga de los datos de entrenamiento. Realice la predicción con el conjunto de test para construir la matriz de confusión y calcular la accuracy del modelo, utilizando las funciones predict y table respectivamente.
+
+```{r}
+# PONER UNA NUEVA CELDA CTROL+ALT+I
+
+test<-read.delim("practica6_datos/train.csv", sep = "\t", head = TRUE)
+
+#aqui poingo la colimna id como filas
+rownames(test) <- test$id
+#puede ser que quite la columna id
+test$id <- NULL
+
+
+#fijo la semilla antes de empezar--> se me generan siempre los mismos numero aletorios en esta sesion (para los algoritmos)
+set.seed(1)
+
+#VER TABLA
+head(test)
+
+str(test)
+
+dim(test) # 500 filas 4 variables
+
+```
+
+```{r}
+pred <- predict(arbol_2, test, type = 'class')
+
+conf <- table (test$Survived, pred)
+
+#calcula el acccuracy
+acc<- sum(diag(conf)) / sum(conf)
+print(acc)
+```
+
+5\. Copie el siguiente código
+
+¿Qué observa? El modelo resultante funciona bien si calculamos su accuracy pero es difícil de interpretar. Para arreglar esta situación pode el árbol con la función prune y vuelva a dibujarlo.
+
+Se observa que el modelo se esta sobreajustando a los datos
+
+```{r}
+set.seed(1) # no hace falta otra vez
+tree <- rpart(Survived ~., train, method="class", control=rpart.control(cp=0.00001)) # el metodo control implica mejorar el arbol (tunearlo), mejora el rendimiento
+fancyRpartPlot(tree)
+```
+
+```{r}
+
+# COPIAR DE LA PROFESORA LO VA A SUBIR RESUELTO
+
+#pruebo el rendimiento del modelo sobreajustado
+
+# habria que podarlo
+
+
+```
+
+EJERCICIO 2
+
+Ejercicio 2: datos del titanic y evaluación mediante curva ROC
+
+Utilizando el ejercicio anterior, su árbol de decisión creado, en lugar de obtener la clase como resultado de predicción vamos a obtener la probabilidad de que se obtenga una clase con el siguiente código:
+
+Vamos a realizar una análisis ROC y para ello siga los siguientes pasos:
+
+1\. Cargue la librería ROCR. Llame a la función prediction pasando como argumentos las probabilidades y la columna del atributo clase. El resultado de esta función, juntos con "tpr" y "fpr" utilícelo como argumentos de entradas de la función performance. Finalmente llame a la función plot dando como entrada el resultado de la función anterior.
+
+2\. Para obtener el valor de AUC o área bajo la curva debemos escribir el siguiente código:
+
+```{r}
+library("ROCR")
+```
+
+```{r}
+
+#hago que el arbol de decision me devuelva un porcentaje como prediccion y no directamente VIVO Y MUERTO
+
+all_probs <- predict(tree, test, type="prob")
+summary(all_probs)
+all_probs[,2]
+probs <- all_probs[,2]
+
+
+```
+
+```{r}
+
+# ANALISIS ROC DEL MODELO ANTERIOR
+
+#genero la prediccion pasando la var objetivo y las probabilidades calculadas con el modelo
+predicion <- prediction(probs, test$Survived)
+
+#me calcula los valores de falsos postivos y verdades positivos para cada umbral---> en concreto calculo estos valores para 16 umbrales distintos
+#(A performance instance
+#  'False positive rate' vs. 'True positive rate' (alpha: 'Cutoff')
+#  with 16 data points)
+
+analisisROC <- performance(predicion, "tpr", "fpr")
+
+
+plot(analisisROC)
+```
+
+```{r}
+#CALCULO EL AREA POR DEBAJO DE LA CURVA
+#le paso las prediccion de mi modelo en porcetajes
+
+perf_auc <- performance(predicion, "auc")
+print(perf_auc@y.values[[1]])
+```
+
+NO ESTA COPIADO PARA NADAAAA
+
+EJERCICIO 3:
+
+ALGORITMO BASADOS EN DISTANCIA --\> KNN ---\> HAY QUE NORMALIZAR LAS VARIABLES
+
+Ejercicio 3: datos del titanic y knn
+
+La técnica de clasificación knn se basa en la distancia de la observación a clasificar en función de los vecinos más cercanos. Observe el siguiente ejemplo en donde tenemos 3 observaciones con dos atributos, la altura y peso de las personas que constituyen la población de estudio. Si calculamos la distancia entre las observaciones 1-2 y 1-3 vemos que son cercanas.
+
+////////////////////////////
+
+Sin embargo, al cambiar la escala del atributo altura de metro a centímetros se observa que la distancia entre 1-3 es mucho mayor que entre 1-2. Luego la escala de los atributos influye en el cálculo de distancias.
+
+///////////////////////
+
+Para evitar este problema se normaliza el valor de todos los atributos entre 0 y 1. De manera que dado el vector X se aplica la siguiente ecuación para cada uno de sus valores x:
+
+x = [x -- min(X)] / [max(X) -- min(X)]
+
+El objetivo es crear un modelo de predicción de la supervivencia de los pasajeros del Titanic utilizando una técnica de aprendizaje basado en dinstancia, el knn. Para ello sigua los siguientes pasos:
+
+/////////////////////
+
+1\. La función knn tiene como parámetro el conjunto de entrenamiento, el de test y el vector de clases, para ello realice lo siguiente:
+
+```{r}
+
+test <- read.delim("practica6_datos/train.csv", sep = "\t", head=TRUE)
+train <- read.delim("practica6_datos/train.csv", sep = "\t", head=TRUE)
+
+
+train_labels <- train$Survived
+test_labels <- test$Survived
+knn_train <- train
+knn_test <- test
+knn_train$Survived <- NULL
+knn_test$Survived <- NULL
+
+
+```
+
+2\. Normalice los atributos numéricos, es decir, la clase y edad del pasajero.
+
+```{r}
+#normalizar Pclass
+min_class <- min(knn_train$Pclass)
+max_class <- max(knn_train$Pclass)
+
+knn_train$Pclass <- (knn_train$Pclass -min_class)/(max_class - min_class)
+
+knn_test$Pclass <- (knn_test$Pclass -min_class)/(max_class - min_class)
+
+#normalizar Edad
+
+min_class <- min(knn_train$Age)
+max_class <- max(knn_train$Age)
+
+knn_train$Age <- (knn_train$Age -min_class)/(max_class - min_class)
+
+knn_test$Age <- (knn_test$Age -min_class)/(max_class - min_class)
+
+#normalizar Sexx
+
+min_class <- min(knn_train$Sex)
+max_class <- max(knn_train$Sex)
+
+knn_train$Sex <- (knn_train$Sex -min_class)/(max_class - min_class)
+
+knn_test$Sex <- (knn_test$Sex -min_class)/(max_class - min_class)
+```
+
+3\. Llame a la función knn y obtenga la matriz de confusión. A partir de ella calcule el accuracy del modelo.
+
+```{r}
+
+set.seed(1)
+
+library(class)
+
+knn_train$Sex <-
+```
+
+4\. Vamos a realizar un estudio para averiguar cuál es el mejor valor de K para este conjunto de datos. Con este objetivo vamos a generar un vector de nombre range con todos los k a analizar y un vector de nombre acc donde almacenaremos los valores de accuracy de todos los modelos. Para ello copie el siguiente código:
+
+```{r}
+
+```

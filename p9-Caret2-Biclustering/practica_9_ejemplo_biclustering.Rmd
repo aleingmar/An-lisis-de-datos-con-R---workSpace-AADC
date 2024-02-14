@@ -1,0 +1,103 @@
+---
+title: "Ejemplo de uso de bi-clustering"
+output: html_notebook
+---
+
+El __*bi-clustering*__, o clustering en dos dimensiones, es un tipo particular de clustering donde se agrupan tanto instancias como variable de manera simultánea. Debido a la alta dimensionalidad de los datos de expresión génica, donde se tienen conjuntos de datos con miles de genes y decenas o incluso cientos de muestras, es decir, matrices con miles de filas y cientos de columnas, se ha desarrollado ampliamente en este contexto. 
+
+
+#### Veamos un ejemplo:
+
+Instalamos el paquete *biclust* y usamos los datos de *Saccharomyces cerevisiae* publicado por **Barkow et al**. (Bioinformatics, 22, 1282-1283)
+
+
+```{r}
+if(!require("biclust")){
+  install.packages("biclust")  
+}
+library(biclust)
+
+data(BicatYeast) 
+
+```
+
+Observamos y exploramos los datos.
+
+* Funciones:
++ *dim*
++ *head*
++ *str*
+
+Así mismo, visualizamos usando la función *heatmap*
+
+
+```{r}
+
+dim(BicatYeast)
+head(BicatYeast, n=3)
+str(BicatYeast)
+
+# Visualizacion:
+heatmap(BicatYeast) 
+
+
+```
+
+
+Aplicamos el algoritmo de biclustering *Plaid Models*, función **BCPlaid** de la librería *biclust*. 
+
+
+```{r}
+
+#Aplicamos método de biclustering
+res <- biclust(BicatYeast, method=BCPlaid()) 
+#res <- biclust(BicatYeast, method=BCCC(), delta=1.5, alpha=1, number=50)
+#res <- biclust(BicatYeast, method=BCSpectral(), numberOfEigenvalues=2) 
+
+# Observamos los resultados
+summary(res)
+show(res) #Si se obtienen muchos biclusters devuelve tan sólo 5
+
+```
+
+#### Visualización de bi-clusters en concreto. 
+
+1. El perfil de expresión de los genes del bicluster nº 1.
+
+```{r}
+
+parallelCoordinates(x=BicatYeast, bicResult=res, number=1) 
+```
+
+2. Matriz del bi-cluster nº1. 
+
+
+```{r}
+drawHeatmap(BicatYeast, res, number=1) 
+
+```
+
+
+Imprimimos los resultados. 
+
+
+```{r}
+
+getwd()
+
+#help(writeBiclusterResults)
+writeBiclusterResults("ResultadosPlaid.txt", 
+                      res, 
+                      "Resultados Plaid", 
+                      dimnames(BicatYeast)[1][[1]], 
+                      dimnames(BicatYeast)[2][[1]])
+```
+
+
+
+
+
+
+
+
+

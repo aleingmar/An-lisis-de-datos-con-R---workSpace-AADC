@@ -1,0 +1,211 @@
+---
+title: "Primer cuaderno de R"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Comienzo
+
+Ponemos un "Hola Mundo"
+
+```{r}
+
+# Esto es un comentario
+
+print("Hola")
+
+5+3
+
+```
+
+# Primeros pasos con tipos de datos en R
+
+## Vectores
+
+```{r}
+
+# Creamos un primer vector {3, 5, -7, 8, 9}
+
+v<-c(3,5,-7,8,9)
+
+# Lo visualizamos
+# print(v)
+
+w = c(13,15,0)
+
+# Lo visualizamos
+print(w)
+
+# Primer elemento
+w[1]
+
+# w[0] No salta excepcion pero no es el primer elemento
+
+# Poner nombres a las variables
+names(v)<- c('a','b','c','d','e')
+v
+
+# Operaciones con vectores
+
+sum(v)
+
+v[-1]
+
+v[2:4]
+
+#v[:4]
+#v[4:]
+
+```
+
+## Matrices
+
+```{r}
+# Para crear el trozo de codigo ctrl+alt+i
+
+# Construimos una matriz
+
+m1<-matrix(c(1,2,3,4,5,6,7,8,9), byrow = TRUE, nrow = 3)
+# Le paso el vector, le digo que las rellene por filas y numero de filas
+m1
+
+m2<-matrix(c(1,2,3,4,5,6,7,8,9), n = 3)
+# Ahora lo hago por columnas, por columnas es por defecto
+m2
+
+# Acceder al primer elemento (Accede a la fila 1 columna 1)
+m1[1,1]
+
+# Seleccionar toda la primera fila
+m1[1,]
+
+# Seleccionar toda la primera columna
+m1[,1]
+
+# Operaciones con matrices: transponer
+m1
+t(m1)
+
+```
+
+
+## Dataframes
+
+```{r}
+# Construccion directa
+
+f1<-c('a','b','c')
+f2<-c(1.2,3.5,7.8)
+f3<-c(1.0,4.5,5.2)
+
+df<-data.frame(f1,f2,f3)
+df
+
+# El tipo asociado
+
+# type(df) -> En python se usa para saber el tipo
+class(df)
+
+# Operaciones
+
+dim(df)
+str(df)
+
+# Carga de un conjunto de datos en un dataframe
+
+df2<-iris #iris son unos datos por defecto dentro de R
+df2
+
+dim(df2) # Para ver las dimensiones de la matriz, en este caso, 150 filas y 5 columnas/estancias/variables
+str(df2) # Para ver la estructura
+head(df2, n=3) # Te va a mostrar las tres primeras filas
+tail(df2, n=3) # Te va a mostrar las tres ultimas filas
+
+df2[,1] # Primera columna (acceso como en las matrices)
+df2$Sepal.Length # Primera columna (Otra forma de llamarlo)
+
+```
+
+## Listas en R
+
+```{r}
+
+lista_aux<- list(v, m1, df)
+lista_aux
+
+class(lista_aux)
+
+lista_aux
+
+```
+
+
+## Diferencias entre el tipo cadena y el tipo factor (cadenas categorizables):
+
+```{r}
+
+aux<-c(rep("zuriñe", 2), rep("juan", 4), rep("maria",5)) # rep te repite la cadena el numero de veces que le digas
+aux # Tipo cadena
+
+aux_f<-factor(aux) # Transformo a tipo factor
+aux_f # Lo que hace es categorizar las cadenas. Hay cadenas tipo juan, tipo maria y tipo zuriñe
+
+class(aux)
+class(aux_f)
+
+summary(aux) 
+summary(aux_f)
+
+```
+
+## Recordatorios:
+
+```{r}
+
+# Instalar un paquete (si ya está instalado no hace falta)
+install.packages("dplyr")
+
+# Una vez instalado, cargar la libreria o importar el paquete
+library(dplyr)
+
+# Saber donde está cargada la sesion de R
+getwd()
+# setwd(...). Sirve para cambiar el lugar de la sesion
+
+# Para saber cosas generales de R -> R base cheat sheet (Resumencitos de funciones de R)
+```
+En resumen, buscar las *cheat sheet* asociadas a R. (Buscar en Google r base cheat sheet)
+
+Ejercicio: programar una función que sustituya a la funcion max de R. Es decir, que dado un vector, calcule el maximo de dicho vector utilizando un bucle for o
+if. Llame a esa función "maximo".
+
+## ACTIVIDAD EXTRA: programar la funcion max()
+
+```{r}
+res<-0
+v4<-c(1,2,3,4,2,7,1)
+maxAleIngles<-function(vector){
+    for (e in vector) {
+      if (e>res){
+        res<-e
+      }
+    }
+  
+  return (res)
+}
+
+maxAleIngles(v4)
+
+```
+
+
+
+
+
+
+
+
+
+
+

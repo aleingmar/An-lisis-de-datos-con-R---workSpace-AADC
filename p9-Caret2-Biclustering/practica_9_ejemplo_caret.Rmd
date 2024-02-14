@@ -1,0 +1,196 @@
+---
+title: "Aprendizaje automático con caret: un ejemplo"
+output: html_notebook
+---
+
+**Instalación y carga de las librerías**
+
+```{r}
+#install.packages("caret")
+#library(caret)
+
+#install.packages("e1071")
+#library(e1071)
+
+# Paquete caret
+if(!require(caret)){
+  install.packages("caret")  
+  library(caret)
+}
+# si necesitas la libreria descargarla
+if(!require(e1071)){
+  install.packages("e1071")  
+  library(e1071)
+}
+
+```
+
+Tomamos como ejemplo los daros de **iris** que son ampliamente conocidos y no hace falta preprocesarlos. Le echamos un vistazo antes de trabajar con ellos.
+
+```{r}
+# Datos de iris
+data(iris)
+
+# Inspeccionamos los datos
+#dim(iris)
+head(iris)
+#str(iris)
+
+```
+
+Nos quedamos con el 80% del dataset para entrenar el modelo y el otro 20% para utilizarlo para la validación.
+
+```{r}
+
+# inidce de validación
+validation_index<-createDataPartition(iris$Species, p=0.80, list = FALSE)
+
+# datos de test
+validation<-iris[-validation_index,]
+
+# datos de entrenamiento 
+dataset<-iris[validation_index,]
+
+```
+
+Inspeccionamos los datos de entrenaminto.
+
+```{r}
+# datos originales (150x5)
+dim(iris)
+# datos de entrenamiento (120x5)
+dim(dataset)
+# vemos el tipo cada columna
+sapply(dataset, class)
+# vistazo a las primeras filas
+head(dataset)
+# vemos cuales son las etiquetas
+levels(dataset$Species)
+
+```
+
+¿Cómo se distribuyen las etiquetas? ¿Están bien balanceados los datos?
+
+```{r}
+# dataset$Specie: permite ver todas las etiquetas
+# table(dataset$Specie): muestra el numero de ejemplos por cada etiqueta
+# prop.table(table(dataset$Species)): muestra la proporción del numero de ejemplos por etiqueta
+
+percentage<-prop.table(table(dataset$Species))*100
+cbind(freq=table(dataset$Species), percentage = percentage) 
+
+```
+
+Resumimos los datos de entrenamiento.
+
+```{r}
+# Resumen 
+summary(dataset)
+
+```
+
+**Visualización: univariante**
+
+Una posible manera de hacerla.
+
+```{r}
+
+x<-dataset[,1:4]
+y<-dataset[,5]
+
+par(mfrow = c(1,4))
+for(i in 1:4){
+  boxplot(x[,i], main= names(iris)[i])
+}
+
+plot(y)
+
+```
+
+**Visualización: multivariante**
+
+Una posible manera de hacerla.
+
+```{r}
+
+#install.packages("ellipse")
+#library(ellipse)
+if(!require(ellipse)){
+  install.packages("ellipse")  
+  library(ellipse)
+}
+
+#
+featurePlot(x=x, y=y, plot = "ellipse")
+
+#
+scales <- list(x=list(relation = "free"), y = list(relation="free"))
+featurePlot(x=x, y=y, plot = "density", scales = scales)
+
+
+```
+
+**Algoritmos**
+
+Elegimos validación cruzada en bloques de diez o *10-fold Crossvalidation* y la métrica de evaluación.
+
+```{r}
+
+control<-trainControl(method = "cv", number = 10)
+metric<-"Accuracy"
+
+```
+
+Aplicamos varios algoritmos y vemos los resultados que se obtienen.
+
+```{r}
+
+# Pide la instalacion - automática - de kernlab, randomForest, además de la de e1071
+
+# a) Algoritmos lineales
+set.seed(7)
+fit.lda <- train(Species~., data=dataset, method="lda", metric=metric, trControl=control)
+
+# b) Algoritmos no lineales
+# CART
+set.seed(7)
+fit.cart <- train(Species~., data=dataset, method="rpart", metric=metric, trControl=control)
+
+# kNN
+set.seed(7)
+fit.knn <- train(Species~., data=dataset, method="knn", metric=metric, trControl=control)
+
+# c) Algoritmos lineales avanzados
+# SVM
+set.seed(7)
+fit.svm <- train(Species~., data=dataset, method="svmRadial", metric=metric, trControl=control)
+# Random Forest
+set.seed(7)
+fit.rf <- train(Species~., data=dataset, method="rf", metric=metric, trControl=control)
+
+```
+
+**Vemos los resultados:**
+
+```{r}
+
+results <- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf))
+summary(results)
+
+```
+
+```{r}
+
+dotplot(results)
+print(fit.lda)
+
+```
+
+La matriz de confusión.
+
+```{r}
+
+predictions <- predict(fit.lda, validation)
+confusionMatrix(predictions, validation$Species)
+
+```

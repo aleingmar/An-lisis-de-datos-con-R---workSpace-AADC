@@ -1,0 +1,202 @@
+---
+title: "Enfermedades Cardiacas"
+output: html_notebook
+---
+
+## Estudio del tratamiento de pacientes con enfermedades cardiacas
+
+Vamos a estudiar un conjunto de datos con información de pacientes con enfermedades cardiacas. Se supone que aquellos pacientes que tengan unas mismas características pueden responder de una manera similar a un determinado tratamiento. 
+
+Los datos han sido tomados del siguiente enlace: https://archive.ics.uci.edu/ml/datasets/Heart+Disease
+
+En primer lugar descarguemos los datos y les echamos un primer vistazo. Compruebe que son **datos numéricos para poder aplicar los algoritmos de clustering**. 
+
+
+```{r}
+
+# Descarga de datos
+heart_disease = read.csv("datasets/heart_disease_patients.csv")
+
+# Estudio de las diez primeras filas
+head(heart_disease, 10)
+
+# Comprobamos que solo trabajamos con variables numéricas
+# Función lapply - vea su funcionamiento
+lapply(heart_disease, class)
+
+```
+
+Estudiemos con la función **summary** para ver la distribución de los datos. Por una lado vemos que debemos elimunar el identificador de los mismos, para trabajar solo con la matriz numérica, y por otro - y sobre todo más importante - vemos si debemos o no escalar los mismos. 
+
+Como los algoritmos de clustering se basan en el uso de distancias, todas las variables deben tener escalas similares. Consulte la función **scale**.
+
+
+Check if the data should be scaled before clustering.
+
+Look at the distributions of the variables in heart_disease using summary().
+Remove the id variable from the data set.
+Scale the data and save it in a new data frame, scaled.
+Look at the distributions of the variables in scaled using summary()
+
+```{r}
+
+# Estudiamos la distribución para ver si los datos están escalados
+summary(heart_disease)
+
+# Eliminamos el id
+heart_disease = heart_disease[ , !(names(heart_disease) %in% c('id'))]
+
+# Escalamos los datos
+scaled = scale(heart_disease)
+
+# ¿Qué diferencia encontramos ahora?
+summary(scaled)
+
+```
+
+Aplicamos el algoritmo **k-Means** con k=5
+
+**Nota**: mediante la instrucción *set.seed(numero)* conseguimos la reproducibilidad de los datos. Es decir, que se obtenga el mismo valor cada vez que se reproduzca el mismo *script* (en la sesión correspondiente) cada vez que se ejecute a pesar del comportamiento aleatorio del algoritmo.
+
+
+```{r}
+
+# Aseguramos la reproducibilidad 
+seed_val = 10
+set.seed(seed_val)
+
+# Cinco clusters
+k = 5
+
+# Primera ejecución del k-Means
+first_clust = kmeans(scaled, centers = k, nstart = 1)
+
+# Vemos cuantos pacientes hay en cada grupo
+first_clust$size
+
+```
+
+Repetimos el experimento y observamos si obtenemos lo mismo.
+
+
+```{r}
+
+# Aseguramos la reproducibilidad 
+seed_val = 38
+set.seed(seed_val)
+
+# Cinco clusters
+k = 5
+second_clust = kmeans(scaled, k, nstart=1)
+
+# Vemos cuantos pacientes hay en cada grupo
+second_clust$size
+
+```
+
+Comparemos los diferentes clusteres que obtenemos. 
+
+Add columns to the heart_disease data containing the cluster assignments for each iteration. Name these columns "first_clust" and "second_clust".
+
+
+## 5. Comparing patient clusters
+
+```{r}
+
+# Añadimos columnas adicionales
+heart_disease['first_clust'] = first_clust$cluster # Clúster al que pertenece en la primera ejecución del kMeans
+heart_disease['second_clust'] = second_clust$cluster # Clúster al que pertenece en la primera ejecución del kMeans
+
+# Cargamos la librería ggplot2
+library(ggplot2)
+
+# Creamos una gráfica usando como ejes la edad y el colesterol para la primera ejecución del kMeans
+plot_one = ggplot(heart_disease, aes(x=age, y=chol, color=as.factor(first_clust))) + geom_point()
+plot_one 
+
+# Creamos una gráfica usando como ejes la edad y el colesterol para la primera ejecución del kMeans
+plot_two = ggplot(heart_disease, aes(x=age, y=chol, color=as.factor(second_clust))) + geom_point()
+plot_two
+
+
+```
+
+
+
+## 6. Hierarchical clustering: another clustering approach
+
+```{r}
+
+# executing hierarchical clustering with complete linkage
+hier_clust_1 = hclust(dist(scaled), method= 'complete')
+
+# printing the dendrogram
+plot(hier_clust_1)
+
+# getting cluster assignments based on number of selected clusters
+hc_1_assign <- cutree(hier_clust_1, 5)
+
+```
+
+
+
+## 7. Hierarchical clustering round two
+
+```{r}
+# executing hierarchical clustering with complete linkage
+hier_clust_2 = hclust(dist(scaled), method='single')
+
+# printing the dendrogram
+plot(hier_clust_2)
+
+# getting cluster assignments based on number of selected clusters
+hc_2_assign <- cutree(hier_clust_2,5)
+
+```
+
+
+
+
+## 8. Comparing clustering results
+
+```{r}
+
+# adding assignments of chosen hierarchical linkage
+heart_disease['hc_clust'] = hc_1_assign
+
+# remove 'sex', 'first_clust', and 'second_clust' variables
+hd_simple = heart_disease[, !(names(heart_disease) %in% c('sex', 'first_clust', 'second_clust'))]
+
+# getting mean and standard deviation summary statistics
+clust_summary = do.call(data.frame, aggregate(. ~hc_clust, data = hd_simple, function(x) c(avg = mean(x), sd = sd(x))))
+clust_summary
+
+```
+
+
+
+## 9. Visualizing the cluster contents
+
+
+```{r}
+# plotting age and chol
+plot_one = ggplot(hd_simple, aes(x=age, y=chol, color=as.factor(hc_clust))) + geom_point()
+plot_one 
+
+# plotting oldpeak and trestbps
+plot_two = ggplot(hd_simple, aes(oldpeak, trestbps, color=as.factor(hc_clust))) + geom_point()
+plot_two
+```
+
+## 10. Conclusion
+
+```{r}
+
+explore_kmeans = F
+explore_hierarch_complete = T
+explore_hierarch_single = F
+
+```
+
+
+

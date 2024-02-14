@@ -1,0 +1,350 @@
+---
+title: '*Clustering*: 2ª parte'
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+### Breast Cancer Wisconsin (Diagnostic) Data Set
+
+Vamos a trabajar con datos sobre un estudio realizado con datos sobre cáncer de mama. Entramos en el enlace de Kaggle: <https://www.kaggle.com/uciml/breast-cancer-wisconsin-data> y leemos con detenimiento toda la información acerca de este *dataset*. Los datos originales están tomados de la UCI Repository: <https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29>
+
+#### Exploración inicial
+
+En primer lugar leemos la información sobre estos datos disponible en Kaggle: ¿qué tipo de estudio es?, ¿cómo se obtuvieron los datos?, ¿en qué características relevantes debemos fijarnos? En segundo lugar, importamos los datos y los estudiamos. ¿Cuántas variables o columnas del conjunto de datos son de tipo numérico? ¿Cuáles son sus nombres? ¿Hay alguna que tenga una etiqueta del tipo "enferma vs. no-enferma"?
+
+Leemos los datos y observamos la estructura del dataframe.
+
+```{r warning=FALSE}
+# Importamos los datos y los estudiamos
+wisc_df<-read.csv("data/WisconsinCancer.csv")
+#
+str(wisc_df)
+
+```
+
+Le echamos un vistazo a los datos.
+
+```{r warning=FALSE}
+
+head(wisc_df)
+
+```
+
+Para hacer un análisis de clustering nos quedamos solo con la parte numérica. Es decir, construimos una matriz con las variables con valores numéricos. Es decir, todas las columnas menos la primera columna, el *id* y la segunda *diagnosis*. No consideramos tampoco la última columna que no aporta información. Nombre con la información de los *id* a las filas de dicha matriz.
+
+```{r warning=FALSE}
+# en R se empieza a escribir desde el 1
+# Construimos una matriz: desde la columna 3 hasta la 32
+wisc_data<-as.matrix(wisc_df[3:32])
+
+# Le ponemos los ids a las filas de la matriz
+rownames(wisc_data)<-wisc_df$id
+
+```
+
+¿Están todos los datos en el mismo rango de valores? Si no fuera así, debemos escalarlos o poner todas las variables en el mismo rango de valores.
+
+Nota: en general se debe estudiar la media y la desviación para ver si se debe normalizar o no los datos: *colMeans(wisc_data)* y *apply(wisc_data,2,sd)*
+
+```{r warning=FALSE}
+
+
+# ¿Escalo los datos?: Lo vamos a hacer al aplicar el clustering
+summary(wisc_data) # summary es un resumen de la estadistica
+
+```
+
+Observamos que no es así, por lo que los escalamos.
+
+```{r warning=FALSE}
+# Vemos los max y min para ver que haya que normalizar
+
+# escalar y normalizar no es lo mismo
+
+# escalar no se establecen unos valores predefinidos donde el max es 1 y el min 0.
+# si no que se hace que los valores esen a una escala mas parecida
+
+
+wisc_data_escalados<-scale(wisc_data)
+summary(wisc_data_escalados)
+
+
+```
+
+Antes de continuar nos planteamos si es conveniente reducir el número de variables aplicando una técnica de redución de la dimensionalidad.
+
+```{r warning=FALSE}
+# 569 filas, 30 columnas
+
+dim(wisc_data_escalados)
+
+```
+
+Los datos tienen 30 variables o atributos. Decidimos que vamos a reducir la dimensionalidad.
+
+#### Análisis de Componentes Principales o **PCA**
+
+**PCA** o Análisis de Componentes Principales sirve para realizar una trasformación de los datos de tal manera que se trabaje con menos variables y sea más sencillo aplicar los algoritmos. Es una técnica de "reducción de la dimensionalidad". Enlace: <https://bit.ly/145NDZW>
+
+```{r warning=FALSE}
+#Aplicamos un PCA escalando los datos
+wisc_pca<-prcomp(wisc_data_escalados,scale. = TRUE)
+
+```
+
+Nota: el parámetro "scale" está por defecto a false. En general se suele hacer la llamada poniéndolo a true. En este caso, al haber escalado los datos antes, no sería necesario. (Cuando hemos escalado los datos no sabíamos si íbamos a aplicar o no un PCA).
+
+Aplicamos la función *summary* para ver con cuántos ejes se obtienen con, por ejemplo, un 90% de "variabilidad" de los datos. Observamos el valor de *cumulative proportion*. ¿Con cuántos ejes se consigue un 90% de variablidad?
+
+Nota: el objetivo es tomar un número de componentes del PCA menor que el número oringinal de variables y tal que la variabilidad de los datos, su "cumulative proportion", sea mayor que 0.9.
+
+Un PCA lo que hace es representar los datos en un nuevo sistema de coordenadas de tal forma que los datos se ordenan según su "variabilidad". Eliminamos variables - para trabajar en un espacio métrico más sencillo -, pero de manera que no perdamos demasiada información.
+
+```{r warning=FALSE}
+
+# LA %VARIABILIDAD ES COMO DE JUNTOS ESTAN LOS DATOS
+#UN 99% DE VARIABILIDAD ESTA MUCHO MAS COMPACTO QUE UN 40%
+
+
+# ...en este caso para PC7 (ver cumulative proportion)
+# ...con 7 ejes se consigue un 90% de variabilidad de los datos
+#hay que mirar el proportion of variance
+summary(wisc_pca)
+
+```
+
+Observamos que con 7 ejes se consigue un 90% de variabilidad de los datos. Es decir, nos quedamos con las primeras siete componentes.
+
+```{r warning=FALSE}
+
+wisc_data_reduccion<-wisc_pca$x[,1:7]
+
+```
+
+Aunque no sea necesario, visualizamos el resultado del PCA de tal manera que vea la relación de las variables originales.
+
+```{r warning=FALSE}
+
+# Completo: indica la relacion entre los ejes originales
+biplot(wisc_pca) 
+
+```
+
+Para tratar de entender qué significa hacer un PCA representamos dos a dos algunos ejes. ¿Qué dibujo separa mejor? ¿PC1 vs. PC3? o ¿PC1 vs. PC9?
+
+Representamos los ejes dos a dos. Por ejemplo, PC1 vs. PC2 o PC1 vs. PC9 y observémoslos según la etiqueta. ¿Qué dibujo separa mejor? ¿PC1 vs. PC3? o ¿PC1 vs. PC9?
+
+```{r warning=FALSE}
+
+par(mfrow = c(2,2))
+
+plot(wisc_pca$x[,c(1,2)],xlab = "PC1",ylab = "PC2")
+plot(wisc_pca$x[,c(1,3)],xlab = "PC1",ylab = "PC3")
+plot(wisc_pca$x[,c(28,29)],xlab = "PC28",ylab = "PC29")
+plot(wisc_pca$x[,c(29,30)],xlab = "PC29",ylab = "PC30")
+
+```
+
+#### Clustering k-Means
+
+Aplicamos el algoritmo k-Means.
+
+Debemos tener en cuenta la elección del valor de k y eligir un valor de los parámetros de tal manera que se controle la aleatoriedad intrínseca del algoritmo. Además, siempre se deben escalar los datos para ejecutar el algoritmo.
+
+```{r warning=FALSE}
+
+vector_compactacion<-0
+
+for(i in 1:15){
+  km_wisc_data_reduccion<-kmeans(wisc_data_reduccion,center=i,nstar=20)
+  vector_compactacion[i] <- km_wisc_data_reduccion$tot.withinss #le saco la compactacion al kmeans aplicado a los datos
+}
+
+# Construye rejilla 1x1
+par(mfrow = c(1,1)) 
+
+# Representamos sum of squares vs. number of clusters
+plot(1:15, vector_compactacion, type = "b", 
+     xlab = "Numero de clusters", 
+     ylab = "Dispersion")
+
+
+#HAY QUE BUSCAR LOS GRANDES SSALTOS DE DISPERSION AL CAMBIAR DE K:
+# cuando hay un gran salto (aumenta la compactacion) de un k al otro es muy bueno,
+#pero cuando el siguiente salto varía poco => redundante
+
+```
+
+Observando la gráfica se puede elegir un valor de k o bien 2, 3 o incluso 4. No está claro del todo. Realizamos ejecuciones para k=2 y k=4.
+
+Aplicamos el algoritmo kMeans para k=2.
+
+```{r warning=FALSE}
+
+km_valor_2_wisc_data_reduccion<-kmeans(wisc_data_reduccion,center=2,nstar=20)
+#km_valor_2_wisc_data_reduccion
+
+```
+
+Visualizamos el resultado (la gráfica visualiza los dos primeros ejes de los siete que tienen los datos reducidos).
+
+```{r warning=FALSE}
+
+plot(wisc_data_reduccion,col=km_valor_2_wisc_data_reduccion$cluster, main="km_valor_2_wisc_data_reduccion")
+
+```
+
+Aplicamos el algoritmo kMeans para k=4.
+
+```{r warning=FALSE}
+
+km_valor_4_wisc_data_reduccion<-kmeans(wisc_data_reduccion,center=4,nstar=20)
+#km_valor_4_wisc_data_reduccion
+
+```
+
+Visualizamos el resultado (la gráfica visualiza los dos primeros ejes de los siete que tienen los datos reducidos).
+
+```{r warning=FALSE}
+
+plot(wisc_data_reduccion,col=km_valor_4_wisc_data_reduccion$cluster, main="km_valor_4_wisc_data_reduccion")
+
+```
+
+#### Clustering jerárquico
+
+Realizamos un clustering de tipo jerárquico, para ello tenemos en cuenta las siguientes consideraciones:
+
+-   Los datos siempre tienen que estar escalados para que todas las observaciones estén en un rango parecido.
+-   Se calcula la matriz de distancias.
+-   Vamos a utilizar la opción de "linkage Completo"
+-   Se construye el dendograma y generamos los clústeres.
+
+```{r warning=FALSE}
+
+# Calculo de la matriz de distancias
+matriz_distancias<-dist(wisc_data_reduccion)
+# Clustering jerarquico con linkage Completo
+hclust_wisc_data_reduccion<-hclust(matriz_distancias,method = "complete")
+# Visualizamos dendograma
+plot(hclust_wisc_data_reduccion, hang=-1) 
+
+```
+
+Observando el dendograma vemos que no tiene sentido generar un resultado con dos clústeres. Lo cortamos de maneras que obtengamos cuatro.
+
+```{r warning=FALSE}
+
+# Cortamos de manera que tengamos 4 clusteres
+wisc_hclust_clusters<-cutree(wisc_hclust,k=4)
+
+```
+
+Visualizamos el resultado (la gráfica visualiza los dos primeros ejes de los siete que tienen los datos reducidos).
+
+```{r}
+
+plot(wisc_data_reduccion,col=wisc_hclust_clusters, main="wisc_data_reduccion")
+
+```
+
+#### Comparamos los resultados de los dos algoritmos.
+
+Primero comparamos la opción del kMeans para k=2. ¿Qué observamos?
+
+```{r warning=FALSE}
+
+table(km_valor_2_wisc_data_reduccion$cluster, wisc_hclust_clusters)
+
+```
+
+Segundo comparamos la opción del kMeans para k=4. ¿Qué observamos?
+
+```{r warning=FALSE}
+
+table(km_valor_4_wisc_data_reduccion$cluster, wisc_hclust_clusters)
+
+
+```
+
+#### Conocimiento experto del problema o **the ground truth**
+
+El conjunto de datos que estamos analizando incluye una etiqueta que informa si el paciente está o no enfermo. Esta etiqueta se puede considerar el conocimiento experto o **the ground truth** del problema. En general, este tipo de información adicional no estará disponible en los primeros pasos de un estudio. De hecho, muchas veces, el realizar un estudio de clustering sirve para o bien definir las etiquetas o bien para ver la calidad y coherencia de las mismas.
+
+Por ejemplo, podríamos haber elegido directamente k=2 al ejecutar el algoritmo del kMeans, pero estaríamos asumiendo como hipótesis que, por tener dos clases, los datos se agrupan en dos grupos. La asunción de esta hipótesis es un salto al vacío y desvirtúa el análisis de clustering. Si queremos utilizar un algoritmo de clustering para ver los grupos que hay y, como hipótesis asumimos que los grupos vienen determinados de manera externa a través de una etiqueta, ¿qué sentido tiene el planteamiento del estudio? En general, las etiquetas están bien construidas y se puede asumir la hipótesis, pero no deja de ser una decisión ajena al estudio no supervisado de los datos.
+
+Volviendo al problema, alamecenamos el vector de *diagnosis* como un vector binario de 0s y 1s.
+
+```{r warning=FALSE}
+# Guarda el vector de diagnostico
+diagnosis<-wisc_df$diagnosis
+diagnosis # observamos
+
+```
+
+Ponemos el vector como binario para poder utilizarlo (por ejemplo, para hacer un dibujo).
+
+```{r warning=FALSE}
+
+# Pone el vector en binario
+diagnosis<-as.numeric(wisc_df$diagnosis == 'M')
+diagnosis
+
+```
+
+Vemos cómo se distriben las etiquetas y si los datos están balanceados.
+
+```{r warning=FALSE}
+
+table(diagnosis) # cuantos observaciones tienen diagnostico maligno
+
+```
+
+#### Evaluación utilizando el conocimiento experto
+
+Resultados del kMeans para k=2 respecto a la etiqueta de los datos. ¿Qué observamos?
+
+```{r warning=FALSE}
+
+table(km_valor_2_wisc_data_reduccion$cluster, diagnosis)
+
+```
+
+Resultados del kMeans para k=4 respecto a la etiqueta de los datos. ¿Qué observamos?
+
+```{r warning=FALSE}
+
+table(km_valor_4_wisc_data_reduccion$cluster, diagnosis)
+
+
+```
+
+Resultados del jerárquico respecto a la etiqueta de los datos. ¿Qué observamos?
+
+```{r warning=FALSE}
+
+table(wisc_hclust_clusters, diagnosis)
+
+```
+
+Se puede observar que algunos puntos no se separan del todo bien teniendo en cuenta la información de las etiquetas y las de los clústeres. ¿Qué ocurre en esos puntos? Quizás sean puntos interesantes para un estudio con más detalles.
+
+#### Gráficas del PCA con el color de las etiquetas.
+
+Por último, como curiosidad, Repetimos las gráficas que hicimos antes de los ejes coordenados que se obtenían con el PCA, pero coloreando según la etiqueta.
+
+```{r warning=FALSE}
+
+par(mfrow = c(2,2))
+
+plot(wisc_pca$x[,c(1,2)],col=(diagnosis+1), xlab = "PC1",ylab = "PC2")
+plot(wisc_pca$x[,c(1,3)],col=(diagnosis+1), xlab = "PC1",ylab = "PC3")
+plot(wisc_pca$x[,c(28,29)],col=(diagnosis+1), xlab = "PC28",ylab = "PC29")
+plot(wisc_pca$x[,c(29,30)],col=(diagnosis+1), xlab = "PC29",ylab = "PC30")
+
+```
+
+Observando cómo se distribuyen las etiquetas en los ejes coordenados del PCA podemos intuir cuáles son los puntos que hemos comentado en el apartado anterior. Puntos que, teniendo distinta etiqueta, tienen -- desde un punto de vista de los datos -- una situación bastante parecida.
+
+Podemos elucubrar que ... ¿Y si las etiquetas no son totalmente disjuntas? ¿Y si hay pacientes enfermos, pero poco enfermos, y pacientes sanos, pero a punto de estar enfermos?

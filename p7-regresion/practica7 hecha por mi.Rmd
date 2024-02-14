@@ -1,0 +1,73 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Ejercicio 1: Regresión lineal simple: datos de una población de kanguros
+
+Se le proporciona un fichero de nombre "kanguro.xls" 1 que contiene la medición de la anchura y largo de la nariz de una población aleatoria de kanguros grises. El nombre de las variables son:
+
+o nose_width (mm)
+
+o nose_length (mm)
+
+Estos datos representan las variables de 45 kanguros. El objetivo es familiarizarnos con el concepto de regresión simple2.
+
+1\. Cargue los datos en una variable de nombre kang_nose que será un dataframe con 2 variables o atributos y 45 observaciones (kanguros) que vienen codificados en el fichero.
+
+```{r}
+kang_nose <-read.delim("data/kanguros.csv", sep = "\t", head = TRUE)
+head(kang_nose)
+str(kang_nose)
+dim(kang_nose)
+```
+
+Inspeccione el conjunto de entrenamiento (funciones head, str, dim).
+
+2\. Modifique el nombre de las variables X e Y por nombres más intuitivos: nose_length y nose_width.
+
+```{r}
+colnames(kang_nose) <- c('nose_length', 'nose_width')
+colnames(kang_nose)
+head(kang_nose)
+```
+
+3\. El objetivo es describir la relación lineal entre las dos variables con la función lm() en caso de que exista, para ello exploraremos previamente los datos:
+
+o Dibuje las observaciones en el plano, de manera que el eje X sea la anchura de la nariz, y el eje Y el largo. Para ello use la función plot.
+
+o Cree una función lineal que aproxime la longitud de la nariz en función del ancho. Para ello utilice la función lm con dos parámetros: el primero indica la variable a predecir mediante una fórmula y el segundo el conjunto de datos.
+
+o Puede predecir el valor de un nuevo canguro utilizando la función predict. Para ello cree una variable nueva utilizando el primero del dataset. ¿Qué observa?
+
+```{r}
+#plot(kang_nose)
+plot(kang_nose$nose_width, kang_nose$nose_length) #el primero es la x y el segundo es la y
+```
+
+```{r}
+#REGRESION LINEAL
+#quiero una funcion lineal para aproximar la lo g de la nariz en funcion del ancho
+#primero es la var objetivo
+
+# PONIENDO kang_nose$nose_width no sale
+lm_kang<-lm(formula=nose_length~nose_width, data=kang_nose)
+lm_kang
+```
+
+```{r}
+
+# PREDICCION
+
+#me quedo con el primer individuo de mi dataframe
+nose_width_new <- kang_nose[1,]
+
+#predict(object=mod, newdata=nuevo)
+predict(lm_kang, nose_width_new)
+```
+
+```{r}
+#PARA REPRESENTAR LA REGRESION LINEALÇ
+plot(kang_nose$nose_width, kang_nose$nose_length)
+abline(lm_kang$coefficients, col = "red")
+```
